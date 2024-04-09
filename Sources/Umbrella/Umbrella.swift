@@ -19,16 +19,16 @@ public extension ProviderType {
 public protocol EventType {
     func name(for provider: ProviderType) -> String?
     func parameters(for provider: ProviderType) -> [String: Any]?
-    var excludedProviders: [ProviderType] {get}
-    var manualProviders: [ProviderType]? {get}
+    var excludedProviderIDs: [String] {get}
+    var manualProviderIDs: [String]? {get}
 }
 
 
 public extension EventType {
-    var excludedProviders: [ProviderType] {
+    var excludedProviderIDs: [String] {
         return []
     }
-    var manualProviders: [ProviderType]? {
+    var manualProviderIDs: [String]? {
         return nil
     }
 }
@@ -51,8 +51,11 @@ open class Analytics<Event: EventType>: AnalyticsType {
         }
     }
     open func log(_ event: Event) {
-        let eventProviders = event.manualProviders ?? providers.filter { provider in
-            let providerIsExcluded = event.excludedProviders.contains(where: {$0.id == provider.id})
+        let manualProviders = event.manualProviderIDs?.compactMap { provider in
+            return providers.first(where: {$0.id == provider})
+        }
+        let eventProviders = manualProviders ?? providers.filter { provider in
+            let providerIsExcluded = event.excludedProviderIDs.contains(provider.id)
             return !providerIsExcluded && !provider.manualOnly
         }
         log(event: event, for: eventProviders)
